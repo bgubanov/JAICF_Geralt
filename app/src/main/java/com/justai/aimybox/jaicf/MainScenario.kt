@@ -13,60 +13,74 @@ object MainScenario: Scenario() {
         /**
          * Appends these buttons for every response
          */
-        handle<AfterProcessHook> {
-            it.reactions.buttons(
-                "Help me!", "How are you?", "What is your name?"
-            )
-        }
 
-        state("hello") {
+        state("hello") { // сюда переходим после первого будильника
             activators {
                 intent("hello")
-                intent("greet")
             }
 
             action {
-                reactions.run {
-                    image("https://media.giphy.com/media/ICOgUNjpvO0PC/source.gif")
-                    sayRandom("Hello!", "Hello there!")
-                }
+                reactions.aimybox?.audio("hello.mp3")
             }
         }
 
-        state("bye") {
+        state("hello_again") {// сюда после второго
             activators {
-                intent("bye")
-                intent("goodbye")
+                intent("hello")
             }
 
             action {
-                reactions.run {
-                    image("https://media.giphy.com/media/EE185t7OeMbTy/source.gif")
-                    say("Bye bye!")
-                    aimybox?.endConversation()
+                reactions.aimybox?.audio("hello_again.mp3")
+                reactions.aimybox?.audio("task.mp3")
+            }
+            state("dont_want_prisedaniya") {// он не хочет приседать, даем ему отжимания и спрашиваем готов ли он
+                activators {
+                    intent("no_prised")
+                }
+                action {
+                    reactions.aimybox?.audio("pathetic.mp3")
+                    reactions.aimybox?.audio("ready")
+                }
+                state("ready") {// если готов
+                    activators {
+                        intent("yes ready")
+                    }
+                    action {
+                        reactions.aimybox?.audio("start.mp3")
+                    }
+                    state("pushups_end") {// когда он говорит что все спрашиваем сколько
+                        activators {
+                            intent("pushups_end")
+                        }
+                        action {
+                            reactions.aimybox?.audio("how_much")
+                        }
+                        state ("check_timing") {// проверяем как там по таймингу
+                            activators {
+                                intent("number")
+                            }
+                            action {
+                                reactions.aimybox?.audio("syke") // если тайминг не совпадает
+                                reactions.go("ready")
+                            }
+                        }
+                        state("name_amount") {//если говорит не цифру просим повторить
+                            activators {
+                                intent("fallback")
+                            }
+                            action {
+                                reactions.aimybox?.audio("fallback")
+                                reactions.go("check_timing")
+                            }
+                        }
+                        state("planka") {//TODO: логику для планки в тч логику подбадривания и как сюда переходим
+                        }
+                    }
+                    }
                 }
             }
-        }
 
-        state("smalltalk", noContext = true) {
-            activators {
-                anyIntent()
-            }
 
-            action {
-                activator.caila?.topIntent?.answer?.let {
-                    reactions.say(it)
-                }
-
-                activator.rasa?.run {
-                    reactions.say("Hmm... I don't know what to say.")
-                }
-
-                activator.dialogflow?.run {
-                    reactions.say(queryResult.fulfillmentText)
-                }
-            }
-        }
 
         fallback {
             reactions.sayRandom(
